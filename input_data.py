@@ -3,6 +3,15 @@ import os
 import numpy as np
 import tensorflow as tf
 
+def test_image2data(path):
+    image_contents = tf.read_file(path)
+    image = tf.image.decode_jpeg(image_contents, channels=1)
+    image = tf.reshape(image,[64,640,1])
+    print(type(image))
+    print(image.shape)
+    data = np.split(image, 10, axis=1)
+    return data
+
 def raw_image2data(path):
     image_contents = tf.read_file(path)
     image = tf.image.decode_jpeg(image_contents, channels=1)
@@ -95,6 +104,33 @@ def get_files(file_dirs):
     
         
     return image_list, label_list
+def get_testfiles(file_dirs):
+    '''
+    Args:
+        file_dir: file directory
+    Returns:
+        list of images and labels
+    '''
+    image_list = []
+    
+    for file_dir in file_dirs:
+        
+        file = file_dir+"/test/"
+        
+        for file in os.listdir(file):
+            image_list.append(matchfile+file)
+
+        
+    temp = np.array(image_list)
+    temp = temp.transpose()
+    np.random.shuffle(temp)
+
+    
+    image_list = list(temp)
+    
+    
+        
+    return image_list
 
 def get_batch(image, label, batch_size, capacity):
     '''
@@ -147,3 +183,53 @@ def get_batch(image, label, batch_size, capacity):
     label_batch = tf.cast(label_batch, tf.int32)
     return data1_batch, data2_batch, label_batch
 
+def get_testbatch(image, batch_size, capacity):
+    '''
+    Args:
+        image: list type
+        label: list type
+        image_W: image width
+        image_H: image height
+        batch_size: batch size
+        capacity: the maximum elements in queue
+    Returns:
+        image_batch: 4D tensor [batch_size, width, height, 3], dtype=tf.float32
+        label_batch: 1D tensor [batch_size], dtype=tf.int32
+    '''
+    
+    image = tf.cast(image, tf.string)
+    
+    
+
+    # make an input queue
+    input_queue = tf.train.slice_input_producer([image])
+    
+    
+    image = input_queue[0] 
+    print(type(image),type(label),image.shape,"3")
+    data = test_image2data(image)
+    for eachdata in data:
+        eachdata = tf.cast(eachdataset,tf.float32)
+
+   
+
+    
+    ######################################
+    # data argumentation should go to here
+    ######################################
+    data_batch = tf.train.batch(data,
+                                                batch_size= batch_size,
+                                                num_threads= 64, 
+                                                capacity = capacity)
+    
+    #you can also use shuffle_batch 
+#   image_batch, label_batch = tf.train.shuffle_batch([image,label],
+#                                                      batch_size=BATCH_SIZE,
+#                                                      num_threads=64,
+#                                                      capacity=CAPACITY,
+#                                                      min_after_dequeue=CAPACITY-1)
+    
+    for eachdata in data_batch:
+        eachdata = eachdata/256
+    
+    return data_batch
